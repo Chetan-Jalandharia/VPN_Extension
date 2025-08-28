@@ -79,6 +79,26 @@
             background: #45a049;
         }
 
+        .proxy-controls .btn {
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            min-width: 120px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .proxy-controls .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        #proxy-status {
+            font-weight: bold;
+            text-align: center;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
         .section {
             background: white;
             margin: 40px 0;
@@ -252,13 +272,34 @@
         </div>
 
         <div class="demo-container" id="demo">
-            <h2>🧪 Live Demo - IP Checker</h2>
-            <p>Test your current IP address and see how it would change with different proxy settings:</p>
+            <h2>🧪 Live Demo - IP Checker & Proxy Simulator</h2>
+            <p>Test your current IP address and simulate how it would change with different proxy settings:</p>
             
             <div class="ip-checker">
                 <h3>Your Current IP Address</h3>
                 <div class="ip-display" id="ip-display">
                     Click "Check IP" to see your current IP address
+                </div>
+                
+                <!-- Proxy Simulation Controls -->
+                <div style="margin: 20px 0; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 10px;">
+                    <h4>🔄 Proxy Simulation (Educational Demo)</h4>
+                    <p style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 15px;">
+                        Simulate how your IP would appear with different proxy servers:
+                    </p>
+                    
+                    <div class="proxy-controls" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 15px 0;">
+                        <button class="btn" onclick="simulateProxy('direct')">🔓 Direct (Real IP)</button>
+                        <button class="btn" onclick="simulateProxy('us')">🇺🇸 US Proxy</button>
+                        <button class="btn" onclick="simulateProxy('uk')">🇬🇧 UK Proxy</button>
+                        <button class="btn" onclick="simulateProxy('de')">🇩🇪 Germany Proxy</button>
+                        <button class="btn" onclick="simulateProxy('jp')">🇯🇵 Japan Proxy</button>
+                        <button class="btn" onclick="resetToDefault()">↻ Reset to Real IP</button>
+                    </div>
+                    
+                    <div id="proxy-status" style="margin: 10px 0; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; font-size: 0.9rem;">
+                        Status: Using your real IP address
+                    </div>
                 </div>
                 
                 <div style="margin: 20px 0;">
@@ -271,7 +312,7 @@
             </div>
 
             <div class="warning">
-                <strong>🎓 Educational Note:</strong> This demo shows IP detection concepts. The actual extension demonstrates proxy configuration but requires working proxy servers for real IP masking.
+                <strong>🎓 Educational Note:</strong> The proxy simulation above demonstrates how IP addresses would change with different proxy servers. The actual extension requires real proxy servers for genuine IP masking. This demo shows the concept using simulated data.
             </div>
         </div>
 
@@ -381,17 +422,157 @@ vpn-proxy-extension/
     </div>
 
     <script>
+        let realIP = null;
+        let currentMode = 'direct';
+        
+        // Simulated proxy IPs for demonstration
+        const simulatedProxyIPs = {
+            direct: null, // Will use real IP
+            us: {
+                ip: '198.51.100.42',
+                location: 'New York, United States',
+                isp: 'US DataCenter Inc.',
+                country: 'United States',
+                flag: '🇺🇸'
+            },
+            uk: {
+                ip: '203.0.113.17',
+                location: 'London, United Kingdom',
+                isp: 'UK VPN Services Ltd.',
+                country: 'United Kingdom',
+                flag: '🇬🇧'
+            },
+            de: {
+                ip: '192.0.2.88',
+                location: 'Berlin, Germany',
+                isp: 'Deutsche Proxy GmbH',
+                country: 'Germany',
+                flag: '🇩🇪'
+            },
+            jp: {
+                ip: '198.51.100.123',
+                location: 'Tokyo, Japan',
+                isp: 'Japan Secure Networks',
+                country: 'Japan',
+                flag: '🇯🇵'
+            }
+        };
+
+        function simulateProxy(proxyType) {
+            currentMode = proxyType;
+            const statusDiv = document.getElementById('proxy-status');
+            const ipDisplay = document.getElementById('ip-display');
+            
+            if (proxyType === 'direct') {
+                statusDiv.innerHTML = '✅ Status: Using your real IP address (Direct connection)';
+                statusDiv.style.background = 'rgba(0,128,0,0.2)';
+                if (realIP) {
+                    displayIP(realIP, true);
+                }
+            } else {
+                const proxy = simulatedProxyIPs[proxyType];
+                statusDiv.innerHTML = `🔒 Status: Connected to ${proxy.flag} ${proxy.country} proxy server`;
+                statusDiv.style.background = 'rgba(0,100,200,0.2)';
+                
+                // Display simulated proxy IP
+                const mockData = {
+                    ip: proxy.ip,
+                    country: proxy.country,
+                    region: proxy.location.split(',')[1] || proxy.country,
+                    city: proxy.location.split(',')[0],
+                    isp: proxy.isp,
+                    org: proxy.isp,
+                    as: `AS12345 ${proxy.isp}`,
+                    timezone: getTimezoneForCountry(proxy.country)
+                };
+                
+                displayIP(mockData, false);
+            }
+            
+            // Update button states
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.style.background = '#4CAF50';
+            });
+            if (event && event.target) {
+                event.target.style.background = '#2196F3';
+            }
+        }
+        
+        function resetToDefault() {
+            simulateProxy('direct');
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.style.background = '#4CAF50';
+            });
+        }
+        
+        function getTimezoneForCountry(country) {
+            const timezones = {
+                'United States': 'America/New_York',
+                'United Kingdom': 'Europe/London',
+                'Germany': 'Europe/Berlin',
+                'Japan': 'Asia/Tokyo'
+            };
+            return timezones[country] || 'UTC';
+        }
+
+        function displayIP(data, isReal) {
+            const display = document.getElementById('ip-display');
+            const details = document.getElementById('ip-details');
+            
+            const typeIndicator = isReal ? '🌐 Your Real IP' : '🔒 Via Proxy Server';
+            
+            display.innerHTML = `
+                <div style="font-size: 1.1rem; margin-bottom: 10px;">
+                    <strong>${typeIndicator}:</strong> <span style="color: #4CAF50; font-family: monospace;">${data.ip}</span>
+                </div>
+            `;
+            
+            if (data.country) {
+                details.innerHTML = `
+                    <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; text-align: left;">
+                        <h4 style="margin-top: 0;">📍 Location Details</h4>
+                        <p><strong>Country:</strong> ${data.country || 'Unknown'}</p>
+                        <p><strong>Region:</strong> ${data.region || data.regionName || 'Unknown'}</p>
+                        <p><strong>City:</strong> ${data.city || 'Unknown'}</p>
+                        <p><strong>ISP:</strong> ${data.isp || data.org || 'Unknown'}</p>
+                        <p><strong>Timezone:</strong> ${data.timezone || 'Unknown'}</p>
+                        ${data.as ? `<p><strong>AS Number:</strong> ${data.as}</p>` : ''}
+                    </div>
+                `;
+            }
+            
+            if (isReal) {
+                realIP = data;
+            }
+        }
+
         async function checkIP() {
             const display = document.getElementById('ip-display');
             display.innerHTML = '<span class="loading"></span> Checking your IP address...';
             
             try {
+                if (currentMode !== 'direct') {
+                    // If simulating proxy, show the simulated IP
+                    const proxy = simulatedProxyIPs[currentMode];
+                    const mockData = {
+                        ip: proxy.ip,
+                        country: proxy.country,
+                        region: proxy.location.split(',')[1] || proxy.country,
+                        city: proxy.location.split(',')[0],
+                        isp: proxy.isp,
+                        org: proxy.isp,
+                        as: `AS12345 ${proxy.isp}`,
+                        timezone: getTimezoneForCountry(proxy.country)
+                    };
+                    displayIP(mockData, false);
+                    addResult(`✅ Simulated IP through ${proxy.flag} ${proxy.country} proxy: ${proxy.ip}`);
+                    return;
+                }
+                
                 const response = await fetch('https://api.ipify.org?format=json');
                 const data = await response.json();
                 
-                display.innerHTML = `
-                    <strong>Your IP:</strong> ${data.ip}
-                `;
+                displayIP(data, true);
                 
                 // Get location details
                 await getLocationDetails(data.ip);
@@ -412,16 +593,27 @@ vpn-proxy-extension/
                 const data = await response.json();
                 
                 if (data.status === 'success') {
-                    document.getElementById('ip-details').innerHTML = `
-                        <p><strong>📍 Location:</strong> ${data.city}, ${data.regionName}, ${data.country}</p>
-                        <p><strong>🌐 ISP:</strong> ${data.isp}</p>
-                        <p><strong>🕒 Timezone:</strong> ${data.timezone}</p>
-                    `;
+                    const fullData = {
+                        ip: ip,
+                        country: data.country,
+                        region: data.regionName,
+                        city: data.city,
+                        isp: data.isp,
+                        org: data.org,
+                        as: data.as,
+                        timezone: data.timezone
+                    };
+                    
+                    displayIP(fullData, true);
+                    addResult('✅ Location details retrieved successfully');
+                } else {
+                    addResult('⚠️ Could not get location details');
                 }
             } catch (error) {
                 document.getElementById('ip-details').innerHTML = `
                     <p><em>Location details unavailable</em></p>
                 `;
+                addResult('⚠️ Location lookup failed: ' + error.message);
             }
         }
 
