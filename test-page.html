@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VPN Extension Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .info-box {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .ip-display {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .test-section {
+            margin: 30px 0;
+        }
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .instructions {
+            background: rgba(255, 215, 0, 0.2);
+            border: 1px solid rgba(255, 215, 0, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { background: rgba(76, 175, 80, 0.3); }
+        .error { background: rgba(244, 67, 54, 0.3); }
+        .loading { 
+            text-align: center; 
+            opacity: 0.7;
+        }
+        .spinner {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 2px solid white;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔒 VPN Proxy Extension Test Page</h1>
+        
+        <div class="instructions">
+            <strong>📋 How to Test Your VPN Extension:</strong><br>
+            1. Open the VPN extension popup (click the extension icon)<br>
+            2. Try different proxy options<br>
+            3. Click "Check My IP" below to see if your IP changed<br>
+            4. Notice how different proxy settings affect your connection
+        </div>
+
+        <div class="info-box">
+            <h3>🌐 Current IP Information</h3>
+            <div id="ip-display" class="ip-display">
+                Click "Check My IP" to see your current IP address
+            </div>
+            <div id="ip-details"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 IP Detection Tests</h3>
+            <button onclick="checkIP()">Check My IP</button>
+            <button onclick="testMultipleServices()">Test Multiple Services</button>
+            <button onclick="clearResults()">Clear Results</button>
+            
+            <div id="test-results"></div>
+        </div>
+
+        <div class="info-box">
+            <h3>📚 Educational Information</h3>
+            <p><strong>What this test shows:</strong></p>
+            <ul>
+                <li><strong>Direct Connection:</strong> Shows your real IP address</li>
+                <li><strong>System Proxy:</strong> Uses your OS proxy settings (if any)</li>
+                <li><strong>PAC Script Demo:</strong> Demonstrates proxy auto-configuration</li>
+                <li><strong>Working Proxy:</strong> Would show a different IP address</li>
+            </ul>
+            
+            <p><strong>Note:</strong> This extension is educational. Real IP masking requires working proxy servers.</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 Browser Information</h3>
+            <div id="browser-info">
+                <p><strong>User Agent:</strong> <span id="user-agent"></span></p>
+                <p><strong>Language:</strong> <span id="language"></span></p>
+                <p><strong>Platform:</strong> <span id="platform"></span></p>
+                <p><strong>Cookies Enabled:</strong> <span id="cookies"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize browser info
+        document.getElementById('user-agent').textContent = navigator.userAgent;
+        document.getElementById('language').textContent = navigator.language;
+        document.getElementById('platform').textContent = navigator.platform;
+        document.getElementById('cookies').textContent = navigator.cookieEnabled ? 'Yes' : 'No';
+
+        // IP checking functions
+        async function checkIP() {
+            showLoading('ip-display');
+            
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                
+                document.getElementById('ip-display').innerHTML = `
+                    <strong>Your IP Address:</strong><br>
+                    ${data.ip}
+                `;
+                
+                // Try to get more details
+                getIPDetails(data.ip);
+                
+                addTestResult('✅ IP check successful: ' + data.ip, 'success');
+                
+            } catch (error) {
+                document.getElementById('ip-display').innerHTML = `
+                    <strong>Error:</strong><br>
+                    Unable to fetch IP address
+                `;
+                addTestResult('❌ IP check failed: ' + error.message, 'error');
+            }
+        }
+
+        async function getIPDetails(ip) {
+            try {
+                const response = await fetch(`http://ip-api.com/json/${ip}`);
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    document.getElementById('ip-details').innerHTML = `
+                        <p><strong>Location:</strong> ${data.city}, ${data.regionName}, ${data.country}</p>
+                        <p><strong>ISP:</strong> ${data.isp}</p>
+                        <p><strong>Timezone:</strong> ${data.timezone}</p>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('ip-details').innerHTML = `
+                    <p><em>Location details unavailable</em></p>
+                `;
+            }
+        }
+
+        async function testMultipleServices() {
+            const services = [
+                { name: 'ipify.org', url: 'https://api.ipify.org?format=json' },
+                { name: 'httpbin.org', url: 'https://httpbin.org/ip' }
+            ];
+
+            addTestResult('🔄 Testing multiple IP services...', 'loading');
+
+            for (const service of services) {
+                try {
+                    const response = await fetch(service.url);
+                    const data = await response.json();
+                    
+                    const ip = data.ip || data.origin;
+                    addTestResult(`✅ ${service.name}: ${ip}`, 'success');
+                    
+                } catch (error) {
+                    addTestResult(`❌ ${service.name}: Failed (${error.message})`, 'error');
+                }
+            }
+        }
+
+        function showLoading(elementId) {
+            document.getElementById(elementId).innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Checking IP address...
+                </div>
+            `;
+        }
+
+        function addTestResult(message, type) {
+            const resultsDiv = document.getElementById('test-results');
+            const result = document.createElement('div');
+            result.className = `status ${type}`;
+            result.innerHTML = `<small>${new Date().toLocaleTimeString()}</small> - ${message}`;
+            resultsDiv.appendChild(result);
+        }
+
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+            document.getElementById('ip-display').innerHTML = 'Click "Check My IP" to see your current IP address';
+            document.getElementById('ip-details').innerHTML = '';
+        }
+
+        // Auto-check IP on page load
+        window.addEventListener('load', function() {
+            setTimeout(checkIP, 1000);
+        });
+    </script>
+</body>
+</html>

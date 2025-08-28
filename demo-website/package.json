@@ -1,0 +1,14 @@
+{
+  "name": "vpn-extension-demo",
+  "version": "1.0.0",
+  "description": "Demo website for VPN Proxy Extension",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Static site - no build needed'",
+    "start": "vercel dev"
+  },
+  "keywords": ["vpn", "proxy", "browser-extension", "demo"],
+  "author": "Your Name",
+  "license": "MIT"
+}
